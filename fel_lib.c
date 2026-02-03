@@ -104,8 +104,9 @@ static void usb_bulk_recv(libusb_device_handle *usb, int ep, void *data,
 	int rc, recv;
 	/*
 	 * H713 workaround: The H713 BROM sends 64-byte status responses
-	 * for small status reads, causing overflow errors with standard
-	 * 8-byte buffers. Use a temporary buffer for small reads.
+	 * for small status reads (≤8 bytes), causing overflow errors with
+	 * standard 8-byte buffers. Using a larger temporary buffer is safe
+	 * for all SoCs - we still copy only the requested number of bytes.
 	 */
 	unsigned char temp_buffer[64];
 	unsigned char *recv_ptr = data;
@@ -124,7 +125,7 @@ static void usb_bulk_recv(libusb_device_handle *usb, int ep, void *data,
 		
 		/* If using temporary buffer, copy only requested bytes */
 		if (recv_ptr == temp_buffer) {
-			memcpy(data, temp_buffer, recv < length ? recv : length);
+			memcpy(data, temp_buffer, length);
 			length = 0;  /* Exit after one read */
 		} else {
 			length -= recv;

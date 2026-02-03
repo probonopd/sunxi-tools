@@ -578,7 +578,7 @@ soc_info_t soc_info_table[] = {
 		.scratch_addr = 0x121000, /* FEL scratch after SPL region */
 		.thunk_addr   = 0x123a00, .thunk_size = 0x200, /* Thunk near stack */
 		.swap_buffers = h713_sram_swap_buffers,
-		.sram_size    = 207 * 1024,
+		.sram_size    = 207 * 1024, /* Total SRAM available (matches H616) */
 		.sid_base     = 0x03006000,
 		.sid_offset   = 0x200,
 		.sid_sections = generic_2k_sid_maps,
