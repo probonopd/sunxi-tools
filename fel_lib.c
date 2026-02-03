@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define USB_TIMEOUT	10000 /* 10 seconds */
+#define USB_TIMEOUT	20000 /* 20 seconds (H713 requires longer timeout) */
 
 static bool fel_lib_initialized = false;
 
@@ -102,13 +102,34 @@ static void usb_bulk_recv(libusb_device_handle *usb, int ep, void *data,
 			  int length)
 {
 	int rc, recv;
+	/*
+	 * H713 workaround: The H713 BROM sends 64-byte status responses
+	 * for small status reads, causing overflow errors with standard
+	 * 8-byte buffers. Use a temporary buffer for small reads.
+	 */
+	unsigned char temp_buffer[64];
+	unsigned char *recv_ptr = data;
+	int buffer_size = length;
+	
+	if (length <= 8) {
+		recv_ptr = temp_buffer;
+		buffer_size = 64;  /* H713 sends 64-byte status responses */
+	}
+	
 	while (length > 0) {
-		rc = libusb_bulk_transfer(usb, ep, data, length,
+		rc = libusb_bulk_transfer(usb, ep, recv_ptr, buffer_size,
 					  &recv, USB_TIMEOUT);
 		if (rc != 0)
 			usb_error(rc, "usb_bulk_recv()", 2);
-		length -= recv;
-		data += recv;
+		
+		/* If using temporary buffer, copy only requested bytes */
+		if (recv_ptr == temp_buffer) {
+			memcpy(data, temp_buffer, recv < length ? recv : length);
+			length = 0;  /* Exit after one read */
+		} else {
+			length -= recv;
+			data += recv;
+		}
 	}
 }
 
