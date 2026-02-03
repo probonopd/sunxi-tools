@@ -11,3 +11,5 @@ version.h
 tests/sunxi-boards.zip
 tests/sunxi-boards/
 tests/unify-fex
+codeql_detected_source_root
+_codeql*
